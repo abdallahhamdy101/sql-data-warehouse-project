@@ -30,7 +30,7 @@ This project demonstrates a comprehensive data warehousing and analytics solutio
 **Integration:** Combine both sources into a single, user-friendly data model designed for analytical queries.
 
 -------------------
-# BI: Analytics & Reporting (Data Analysis)
+## BI: Analytics & Reporting (Data Analysis)
 
 **Develop SQL-based analytics to deliver detailed insights into:**
 
