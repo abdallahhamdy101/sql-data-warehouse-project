@@ -1,1 +1,134 @@
+-- =======================
+-- [silver].[crm_cust_info] table
+-- =======================
+select * from silver.crm_cust_info
+
+-- Check Nulls and Duplicates in primary key 
+SELECT cst_id  , count(*)
+FROM  silver.[crm_cust_info]
+group by cst_id
+HAVING count(*) > 1 or cst_id is null
+-- result 0
+
+-------------------------------------
+-- check for unwanted spaces 
+SELECT cst_lastname
+FROM silver.[crm_cust_info]
+WHERE cst_lastname != TRIM (cst_lastname)  -- also check cst_last_name and cst_key
+-- result 0
+--------------------------------------
+-- Check data standardization and cosistency 
+Select Distinct cst_gndr
+from silver.crm_cust_info
+
+Select Distinct cst_marital_status
+from silver.crm_cust_info
+
+-- ====================================
+-- [bronze].[crm_prd_info]
+-- ====================================
+SELECT * FROM silver.[crm_prd_info]
+
+-- CHECK Nulls and duplicates in primary key 
+SELECT prd_id ,COUNT(*)
+FROM silver.[crm_prd_info]
+GROUP BY  prd_id
+HAVING COUNT (*) > 1 or prd_id IS NULL 
+-- RESULT 0
+  
+-- Check unwanted spaces 
+SELECT prd_nm
+from silver.[crm_prd_info]
+where prd_nm != TRIM (prd_nm)
+-- result 0
+
+-- Check for nulls or nagitive values in cost
+SELECT prd_cost
+from silver.[crm_prd_info]
+where prd_cost < 0 or prd_cost is null 
+
+-- Check standardization &consistency 
+SELECT DIStinct prd_line
+from silver.[crm_prd_info]
+-- Result 0
+
+-- Check invaild dates 
+Select * 
+from silver.[crm_prd_info]
+WHERE prd_start_dt > prd_end_dt
+-- =========================================
+-- [bronze].[crm_sales_details] 
+-- =========================================
+SELECT * FROM [bronze].[crm_sales_details]
+
+-- check nulls and duplicates in primary key
+Select * from silver.[crm_sales_details]
+where sls_ord_num != trim(sls_ord_num)
+
+-- CHECK INVALID DATES 
+SELECT NULLIF(sls_order_dt , 0 ) as sls_order_dt
+from [bronze].[crm_sales_details]
+where sls_order_dt <=0 
+OR LEN (sls_order_dt) < 8 
+OR sls_order_dt > 20500101 
+OR sls_order_dt < 20000101
+
+-- Check invalid date orders 
+SELECT *
+FROM silver.[crm_sales_details]
+WHERE sls_order_dt > sls_ship_date OR sls_order_dt > sls_due_dt
+--result 0
+
+-- Check data consistency : between sales , quantity and price 
+SELECT sls_sales old_sls_sales ,sls_quantity old_sls_quantity ,sls_price old_sls_price 
+FROM silver.[crm_sales_details]
+WHERE sls_sales != sls_quantity * sls_price
+OR sls_sales <=0 OR sls_quantity <=0 OR sls_price <=0
+OR sls_sales IS NULL OR sls_quantity IS NULL OR sls_price IS NULL
+ORDER BY sls_sales ,sls_quantity ,sls_price
+-- ========================================
+
+-- [bronze].[erp_cust_az12]
+-- check relation by primary keys
+SELECT cid
+FROM silver.[erp_cust_az12]
+WHERE cid not in (select cst_key from [bronze].[crm_cust_info])
+-- subtring cid to be matched 
+-- result 0
+
+-- check invalid B_dates
+SELECT bdate
+FROM silver.erp_cust_az12
+-- WHERE bdate < '1924-01-01'-- inform source system about old dates 
+WHERe  bdate > GETDATE () -- handle future dates to nall 
+
+-- check consistency & standardization  
+SELECT DISTINCT gen 
+FROM  silver.[erp_cust_az12]
+-- RESULT 0
+-- ===================================
+
+-- [bronze].[erp_loc_a101]
+-- check relation by primary keys
+SELECT cid FROM silver.[erp_loc_a101]
+WHERE cid NOt IN (SELECT cst_key FROM silver.crm_cust_info)
+-- result 0
+
+-- check cosistency & standradization
+SELECT DISTINCT cntry
+FROM silver.[erp_loc_a101]
+
+-- ==================================
+-- [bronze].[erp_px_cat_g1v2]
+-- check the relation 
+SELECT 
+	id ,
+	cat ,
+	subcat ,
+	maintenance
+
+FROM [bronze].[erp_px_cat_g1v2]
+WHERE id not in (select cat_id from [silver].[crm_prd_info]  ) AND id != 'CO_PD'
+-- result 0
+-- 
 
